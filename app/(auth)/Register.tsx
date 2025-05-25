@@ -6,10 +6,47 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
-import React from "react";
+import React, { useContext, useState } from "react";
 import colors from "../../data/styling/colors";
+import { useMutation } from "@tanstack/react-query";
+import { register } from "@/api/auth";
+import AuthContext from "@/context/AuthContext";
+import * as ImagePicker from "expo-image-picker";
+
 const Register = () => {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [image, setImage] = useState("");
+
+  const { setIsAuthenticated } = useContext(AuthContext);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (result.canceled) return;
+    setImage(result.assets[0].uri);
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: ({ userInfo, image }: { userInfo: any; image: string }) =>
+      register(userInfo, image),
+    onSuccess: () => {
+      setIsAuthenticated(true);
+    },
+    onError: () => {
+      Alert.alert("Registration failed");
+    },
+  });
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -46,7 +83,21 @@ const Register = () => {
               borderRadius: 5,
               marginTop: 20,
             }}
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+          />
+
+          <TextInput
+            style={{
+              backgroundColor: colors.white,
+              padding: 10,
+              borderRadius: 5,
+              marginTop: 20,
+            }}
             placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <TextInput
@@ -57,9 +108,12 @@ const Register = () => {
               marginTop: 20,
             }}
             placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
           />
 
-          <TouchableOpacity style={{ marginTop: 20 }}>
+          <TouchableOpacity style={{ marginTop: 20 }} onPress={pickImage}>
             <Text style={{ color: colors.white, fontSize: 16 }}>
               Upload Profile Image
             </Text>
@@ -73,6 +127,13 @@ const Register = () => {
               marginTop: 20,
               alignItems: "center",
             }}
+            onPress={() =>
+              mutate({
+                userInfo: { username, email, password },
+                image,
+              })
+            }
+            disabled={isPending}
           >
             <Text
               style={{
@@ -81,7 +142,7 @@ const Register = () => {
                 fontSize: 16,
               }}
             >
-              Register
+              {isPending ? "Registering..." : "Register"}
             </Text>
           </TouchableOpacity>
 

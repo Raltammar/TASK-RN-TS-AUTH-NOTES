@@ -6,11 +6,29 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
-import React from "react";
+import React, { useContext, useState } from "react";
 import colors from "../../data/styling/colors";
+import { useMutation } from "@tanstack/react-query";
+import { login } from "@/api/auth";
+import AuthContext from "@/context/AuthContext";
 
 const Index = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { setIsAuthenticated } = useContext(AuthContext);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: login,
+    onSuccess: () => {
+      setIsAuthenticated(true);
+    },
+    onError: () => {
+      Alert.alert("Login failed", "Please check your email or password.");
+    },
+  });
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -38,6 +56,8 @@ const Index = () => {
               marginTop: 20,
             }}
             placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <TextInput
@@ -48,6 +68,8 @@ const Index = () => {
               marginTop: 20,
             }}
             placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
           />
 
           <TouchableOpacity
@@ -58,7 +80,8 @@ const Index = () => {
               marginTop: 20,
               alignItems: "center",
             }}
-            onPress={() => {}}
+            onPress={() => mutate({ email, password })}
+            disabled={isPending}
           >
             <Text
               style={{
@@ -67,7 +90,7 @@ const Index = () => {
                 fontSize: 16,
               }}
             >
-              Login
+              {isPending ? "Logging in.." : "Login"}
             </Text>
           </TouchableOpacity>
 
